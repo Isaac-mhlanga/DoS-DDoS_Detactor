@@ -20,17 +20,21 @@ import {
 
 // Reusable components
 const StatCard = ({ title, value, description, icon, color }) => (
-  <div className={`bg-gray-700 p-5 rounded-xl border-l-4 ${color}`}>
+  <div className={`bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700 shadow-lg ${color}`}>
     <div className="flex items-center justify-between">
-      <h3 className="text-lg font-semibold flex items-center">
-        {icon}
-        {title}
-      </h3>
-      <span className={`text-2xl font-mono ${color.replace("border", "text")}`}>
+      <div>
+        <div className="flex items-center mb-2">
+          <div className="p-2 rounded-lg bg-opacity-10 mr-3">
+            {icon}
+          </div>
+          <h3 className="text-lg font-semibold text-gray-300">{title}</h3>
+        </div>
+        <p className="text-sm text-gray-400">{description}</p>
+      </div>
+      <span className={`text-3xl font-bold ${color.replace("border", "text")}`}>
         {value}
       </span>
     </div>
-    <p className="text-sm text-gray-400 mt-2">{description}</p>
   </div>
 );
 
@@ -44,36 +48,33 @@ const SeverityBadge = ({ severity }) => {
       ? "medium"
       : "low";
 
+  const colors = {
+    critical: "bg-red-500/20 text-red-400 border-red-500/50",
+    high: "bg-orange-500/20 text-orange-400 border-orange-500/50",
+    medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
+    low: "bg-gray-700/50 text-gray-300 border-gray-600"
+  };
+
   return (
-    <span
-      className={`px-3 py-1 text-xs rounded-full font-medium ${
-        severity === 4
-          ? "bg-red-900 text-red-300"
-          : severity === 3
-          ? "bg-yellow-800 text-yellow-300"
-          : severity === 2
-          ? "bg-orange-800 text-orange-300"
-          : "bg-gray-700 text-gray-300"
-      }`}
-    >
+    <span className={`px-3 py-1 text-xs rounded-full border ${colors[severityText]}`}>
       {severityText}
     </span>
   );
 };
 
-const ActionBadge = ({ action }) => (
-  <span
-    className={`px-3 py-1 text-xs rounded-full font-medium ${
-      action === "blocked"
-        ? "bg-green-900 text-green-300"
-        : action === "allowed"
-        ? "bg-blue-900 text-blue-300"
-        : "bg-yellow-800 text-yellow-300"
-    }`}
-  >
-    {action || "detected"}
-  </span>
-);
+const ActionBadge = ({ action }) => {
+  const colors = {
+    blocked: "bg-green-500/20 text-green-400 border-green-500/50",
+    allowed: "bg-blue-500/20 text-blue-400 border-blue-500/50",
+    detected: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50"
+  };
+  
+  return (
+    <span className={`px-3 py-1 text-xs rounded-full border ${colors[action] || colors.detected}`}>
+      {action || "detected"}
+    </span>
+  );
+};
 
 const PaginationButton = ({ onClick, disabled, children }) => (
   <button
@@ -82,7 +83,7 @@ const PaginationButton = ({ onClick, disabled, children }) => (
     className={`p-2 rounded-lg flex items-center justify-center ${
       disabled
         ? "text-gray-600 cursor-not-allowed"
-        : "text-gray-300 hover:bg-gray-700"
+        : "text-gray-300 hover:bg-gray-700 transition-colors"
     }`}
   >
     {children}
@@ -90,7 +91,7 @@ const PaginationButton = ({ onClick, disabled, children }) => (
 );
 
 const ThreatsView = () => {
-  // State management
+  // State management (same as before)
   const [events, setEvents] = useState([]);
   const [timeRange, setTimeRange] = useState("24h");
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,7 +117,7 @@ const ThreatsView = () => {
   // Track if component is mounted
   const isMounted = useRef(true);
 
-  // Fetch events from server
+  // Fetch events from server (same as before)
   const fetchEvents = async (isAutoRefresh = false) => {
     if (isAutoRefresh) {
       setIsAutoRefreshing(true);
@@ -161,7 +162,7 @@ const ThreatsView = () => {
     }
   };
 
-  // Fetch threat log
+  // Fetch threat log (same as before)
   const fetchThreatLog = async () => {
     try {
       const res = await fetch("http://localhost:5050/suricata/threat-log");
@@ -176,7 +177,7 @@ const ThreatsView = () => {
     }
   };
 
-  // Block an IP address
+  // Block an IP address (same as before)
   const blockIp = async (ip) => {
     if (!ip || ip === "N/A") return;
 
@@ -224,7 +225,7 @@ const ThreatsView = () => {
     };
   }, [eventType, timeRange, searchQuery]);
 
-  // Pagination logic
+  // Pagination logic (same as before)
   const totalPages = Math.ceil(events.length / itemsPerPage);
   const startIdx = (currentPage - 1) * itemsPerPage;
   const currentItems = events.slice(startIdx, startIdx + itemsPerPage);
@@ -235,7 +236,7 @@ const ThreatsView = () => {
     setCurrentPage(page);
   };
 
-  // Helpers
+  // Helpers (same as before)
   const getSeverityText = (sev) => {
     switch (sev) {
       case 4:
@@ -292,20 +293,20 @@ const ThreatsView = () => {
     setEventDetails(null);
   };
 
-  // Calculate statistics
+  // Calculate statistics (same as before)
   const activeBlocks = threatLog.split("BLOCKED").length - 1;
 
   return (
-    <div className="p-6 bg-gray-800 rounded-xl shadow-lg">
+    <div className="p-6 bg-gradient-to-br from-gray-900 to-gray-850 rounded-xl shadow-lg">
       {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 pb-4 border-b border-gray-700">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 pb-6 border-b border-gray-700">
         <div className="flex items-center">
           <h1 className="text-2xl font-bold text-cyan-400 flex items-center">
-            <FiAlertTriangle className="mr-3" />
+            <FiAlertTriangle className="mr-3 text-cyan-400" />
             Threat Defense System
           </h1>
           <div className="ml-4 flex items-center text-sm text-gray-400">
-            <FiWifi className="text-green-500 mr-1" />
+            <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
             {`Connected ${
               lastUpdated
                 ? `• Last updated: ${lastUpdated.toLocaleTimeString()}`
@@ -324,7 +325,7 @@ const ThreatsView = () => {
               fetchThreatLog();
             }}
             disabled={isRefreshing}
-            className="flex items-center px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 disabled:opacity-50 transition-colors"
+            className="flex items-center px-4 py-2.5 bg-gray-800 rounded-lg hover:bg-gray-700/60 disabled:opacity-50 transition-colors border border-gray-700"
             aria-label="Refresh events"
           >
             <FiRefreshCw
@@ -342,7 +343,7 @@ const ThreatsView = () => {
           <select
             value={eventType}
             onChange={(e) => setEventType(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-colors"
             disabled={isRefreshing}
           >
             {eventTypes.map((type) => (
@@ -358,7 +359,7 @@ const ThreatsView = () => {
           <input
             type="text"
             placeholder="Search events..."
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-colors"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             disabled={isRefreshing}
@@ -368,7 +369,7 @@ const ThreatsView = () => {
         <select
           value={timeRange}
           onChange={(e) => setTimeRange(e.target.value)}
-          className="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
+          className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-colors"
           disabled={isRefreshing}
         >
           <option value="5m">Last 5 minutes</option>
@@ -385,7 +386,7 @@ const ThreatsView = () => {
             setItemsPerPage(Number(e.target.value));
             setCurrentPage(1);
           }}
-          className="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
+          className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-colors"
           disabled={isRefreshing}
         >
           {[5, 10, 15, 20, 30, 50].map((n) => (
@@ -398,7 +399,7 @@ const ThreatsView = () => {
 
       {/* Error Display */}
       {error && (
-        <div className="mb-6 p-4 bg-red-900/80 text-red-200 rounded-lg flex items-center">
+        <div className="mb-6 p-4 bg-red-900/80 text-red-200 rounded-lg flex items-center border border-red-700">
           <FiAlertTriangle className="mr-3 flex-shrink-0" />
           <span>{error}</span>
         </div>
@@ -406,7 +407,7 @@ const ThreatsView = () => {
 
       {/* Stats Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Threat Overview</h2>
+        <h2 className="text-xl font-semibold text-gray-300 mb-4">Threat Overview</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {isRefreshing ? (
             Array(4)
@@ -414,9 +415,9 @@ const ThreatsView = () => {
               .map((_, i) => (
                 <div
                   key={i}
-                  className="bg-gray-700 p-5 rounded-xl border-l-4 border-gray-600 h-[120px] flex items-center justify-center"
+                  className="bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700 h-[120px] flex items-center justify-center"
                 >
-                  <FiLoader className="animate-spin text-gray-400 text-2xl" />
+                  <FiLoader className="animate-spin text-cyan-400 text-2xl" />
                 </div>
               ))
           ) : (
@@ -425,32 +426,32 @@ const ThreatsView = () => {
                 title="Critical Threats"
                 value={severityCounts.critical}
                 description="Auto-blocked by system"
-                icon={<FiActivity className="mr-2 text-red-400" />}
-                color="border-red-500"
+                icon={<FiActivity className="text-red-400" />}
+                color="border-l-red-500"
               />
 
               <StatCard
                 title="Total Events"
                 value={events.length}
                 description={`Detected in ${formatTimeRange()}`}
-                icon={<FiAlertTriangle className="mr-2 text-yellow-400" />}
-                color="border-yellow-500"
+                icon={<FiAlertTriangle className="text-yellow-400" />}
+                color="border-l-yellow-500"
               />
 
               <StatCard
                 title="Blocked"
                 value={severityCounts.blocked}
                 description="Successfully mitigated"
-                icon={<FiBarChart2 className="mr-2 text-green-400" />}
-                color="border-green-500"
+                icon={<FiBarChart2 className="text-green-400" />}
+                color="border-l-green-500"
               />
 
               <StatCard
                 title="Active Blocks"
                 value={activeBlocks}
                 description="Malicious IPs blocked"
-                icon={<FiShieldOff className="mr-2 text-cyan-400" />}
-                color="border-cyan-500"
+                icon={<FiShieldOff className="text-cyan-400" />}
+                color="border-l-cyan-500"
               />
             </>
           )}
@@ -459,11 +460,11 @@ const ThreatsView = () => {
 
       {/* Threat Log Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4 flex items-center">
-          <FiAlertTriangle className="mr-2" /> Threat Block Log
+        <h2 className="text-xl font-semibold text-gray-300 mb-4 flex items-center">
+          <FiAlertTriangle className="mr-2 text-cyan-400" /> Threat Block Log
         </h2>
-        <div className="bg-gray-700 rounded-xl p-5">
-          <div className="bg-gray-800 p-4 rounded-lg max-h-40 overflow-y-auto font-mono text-sm whitespace-pre-wrap">
+        <div className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 p-5">
+          <div className="bg-gray-800/50 p-4 rounded-lg max-h-40 overflow-y-auto font-mono text-sm whitespace-pre-wrap">
             {threatLog || "No threats blocked yet"}
           </div>
         </div>
@@ -471,21 +472,21 @@ const ThreatsView = () => {
 
       {/* Events Table Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Security Events</h2>
-        <div className="bg-gray-700 rounded-xl overflow-hidden shadow-lg">
+        <h2 className="text-xl font-semibold text-gray-300 mb-4">Security Events</h2>
+        <div className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-800">
                 <tr>
-                  <th className="px-5 py-4 text-left min-w-[300px]">
+                  <th className="px-5 py-4 text-left text-gray-300 min-w-[300px]">
                     Signature
                   </th>
-                  <th className="px-5 py-4 text-left">Source IP</th>
-                  <th className="px-5 py-4 text-left">Destination IP</th>
-                  <th className="px-5 py-4 text-left">Type</th>
-                  <th className="px-5 py-4 text-left">Severity</th>
-                  <th className="px-5 py-4 text-left">Action</th>
-                  <th className="px-5 py-4 text-left flex items-center">
+                  <th className="px-5 py-4 text-left text-gray-300">Source IP</th>
+                  <th className="px-5 py-4 text-left text-gray-300">Destination IP</th>
+                  <th className="px-5 py-4 text-left text-gray-300">Type</th>
+                  <th className="px-5 py-4 text-left text-gray-300">Severity</th>
+                  <th className="px-5 py-4 text-left text-gray-300">Action</th>
+                  <th className="px-5 py-4 text-left text-gray-300 flex items-center">
                     <FiClock className="mr-2" /> Timestamp
                   </th>
                 </tr>
@@ -497,14 +498,14 @@ const ThreatsView = () => {
                     .map((_, i) => (
                       <tr
                         key={`loading-${i}`}
-                        className="border-t border-gray-600"
+                        className="border-t border-gray-700"
                       >
                         {Array(7)
                           .fill()
                           .map((__, idx) => (
                             <td key={idx} className="px-5 py-4">
                               <div
-                                className="h-4 bg-gray-600 rounded animate-pulse"
+                                className="h-4 bg-gray-700 rounded animate-pulse"
                                 style={{
                                   width:
                                     idx === 0
@@ -522,21 +523,21 @@ const ThreatsView = () => {
                   currentItems.map((event) => (
                     <tr
                       key={event.id}
-                      className={`border-t border-gray-600 hover:bg-gray-600 transition-colors cursor-pointer ${
+                      className={`border-t border-gray-700 hover:bg-gray-800/50 transition-colors cursor-pointer ${
                         event.severity >= 3 ? "bg-red-900/20" : ""
                       }`}
                       onClick={() => showEventDetails(event)}
                     >
-                      <td className="px-5 py-4 font-medium">
+                      <td className="px-5 py-4 font-medium text-white">
                         {event.signature || "Unknown event"}
                       </td>
-                      <td className="px-5 py-4 font-mono">
+                      <td className="px-5 py-4 font-mono text-cyan-300">
                         {event.src_ip || "N/A"}
                       </td>
-                      <td className="px-5 py-4 font-mono">
+                      <td className="px-5 py-4 font-mono text-purple-300">
                         {event.dest_ip || "N/A"}
                       </td>
-                      <td className="px-5 py-4 capitalize">
+                      <td className="px-5 py-4 capitalize text-gray-300">
                         {event.event_type}
                       </td>
                       <td className="px-5 py-4">
@@ -598,11 +599,11 @@ const ThreatsView = () => {
                 <button
                   key={pageNum}
                   onClick={() => paginate(pageNum)}
-                  className={`px-4 py-2 rounded-lg min-w-[40px] flex items-center justify-center ${
+                  className={`px-4 py-2 rounded-lg min-w-[40px] flex items-center justify-center transition-colors ${
                     pageNum === currentPage
                       ? "bg-cyan-600 text-white"
-                      : "bg-gray-700 hover:bg-gray-600"
-                  } transition-colors`}
+                      : "bg-gray-800 hover:bg-gray-700"
+                  }`}
                 >
                   {pageNum}
                 </button>
@@ -628,8 +629,8 @@ const ThreatsView = () => {
 
       {/* Event Details Modal */}
       {eventDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-xl w-full max-w-4xl max-h-[95vh] overflow-y-auto shadow-2xl">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl w-full max-w-4xl max-h-[95vh] overflow-y-auto shadow-2xl border border-gray-700">
             <div className="p-6">
               {/* Modal Header */}
               <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-700">
@@ -643,46 +644,46 @@ const ThreatsView = () => {
                 </div>
                 <button
                   onClick={closeEventDetails}
-                  className="text-gray-400 hover:text-white text-2xl p-2 rounded-full hover:bg-gray-700"
+                  className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-700 transition-colors"
                 >
-                  <FiX />
+                  <FiX size={24} />
                 </button>
               </div>
 
               {/* Event Overview */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-                <div className="bg-gray-700 p-5 rounded-xl">
+                <div className="bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700">
                   <h4 className="text-sm font-semibold text-gray-400 mb-2">
                     Source IP
                   </h4>
-                  <p className="font-mono text-lg break-all bg-gray-800 p-3 rounded-lg">
+                  <p className="font-mono text-lg break-all bg-gray-800/50 p-3 rounded-lg">
                     {eventDetails.src_ip}
                   </p>
                 </div>
 
-                <div className="bg-gray-700 p-5 rounded-xl">
+                <div className="bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700">
                   <h4 className="text-sm font-semibold text-gray-400 mb-2">
                     Destination IP
                   </h4>
-                  <p className="font-mono text-lg break-all bg-gray-800 p-3 rounded-lg">
+                  <p className="font-mono text-lg break-all bg-gray-800/50 p-3 rounded-lg">
                     {eventDetails.dest_ip}
                   </p>
                 </div>
 
-                <div className="bg-gray-700 p-5 rounded-xl">
+                <div className="bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700">
                   <h4 className="text-sm font-semibold text-gray-400 mb-2">
                     Protocol
                   </h4>
-                  <p className="text-lg font-medium bg-gray-800 p-3 rounded-lg">
+                  <p className="text-lg font-medium bg-gray-800/50 p-3 rounded-lg">
                     {eventDetails.proto || "N/A"}
                   </p>
                 </div>
 
-                <div className="bg-gray-700 p-5 rounded-xl">
+                <div className="bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700">
                   <h4 className="text-sm font-semibold text-gray-400 mb-2">
                     Event Type
                   </h4>
-                  <p className="text-lg font-medium bg-gray-800 p-3 rounded-lg capitalize">
+                  <p className="text-lg font-medium bg-gray-800/50 p-3 rounded-lg capitalize">
                     {eventDetails.event_type}
                   </p>
                 </div>
@@ -693,13 +694,13 @@ const ThreatsView = () => {
                 <h4 className="text-sm font-semibold text-gray-400 mb-2">
                   Signature
                 </h4>
-                <p className="text-lg bg-gray-700 p-4 rounded-xl break-all font-medium">
+                <p className="text-lg bg-gray-800/50 p-4 rounded-xl break-all font-medium border border-gray-700">
                   {eventDetails.signature || "No signature available"}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-                <div className="bg-gray-700 p-5 rounded-xl">
+                <div className="bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700">
                   <h4 className="text-sm font-semibold text-gray-400 mb-2">
                     Action
                   </h4>
@@ -708,7 +709,7 @@ const ThreatsView = () => {
                   </div>
                 </div>
 
-                <div className="bg-gray-700 p-5 rounded-xl">
+                <div className="bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700">
                   <h4 className="text-sm font-semibold text-gray-400 mb-2">
                     Severity
                   </h4>
@@ -717,11 +718,11 @@ const ThreatsView = () => {
                   </div>
                 </div>
 
-                <div className="bg-gray-700 p-5 rounded-xl">
+                <div className="bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700">
                   <h4 className="text-sm font-semibold text-gray-400 mb-2">
                     Timestamp
                   </h4>
-                  <p className="text-sm text-center font-medium">
+                  <p className="text-sm text-center font-medium text-gray-300">
                     {formatTimestamp(eventDetails.timestamp)}
                   </p>
                 </div>
@@ -729,18 +730,18 @@ const ThreatsView = () => {
 
               {/* Block IP Section */}
               {eventDetails.src_ip && eventDetails.src_ip !== "N/A" && (
-                <div className="mb-6 p-5 bg-gray-700 rounded-xl">
+                <div className="mb-6 p-5 bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700">
                   <h4 className="text-sm font-semibold text-gray-400 mb-3 flex items-center">
                     <FiShieldOff className="mr-2" /> Block Malicious Source
                   </h4>
                   <button
                     onClick={() => blockIp(eventDetails.src_ip)}
                     disabled={isBlocking}
-                    className={`w-full py-4 rounded-xl flex items-center justify-center ${
+                    className={`w-full py-4 rounded-xl flex items-center justify-center transition-colors ${
                       isBlocking
                         ? "bg-red-800 cursor-not-allowed"
                         : "bg-red-600 hover:bg-red-700"
-                    } transition-colors text-lg font-medium`}
+                    } text-lg font-medium`}
                   >
                     <FiShieldOff className="mr-3" />
                     {isBlocking
@@ -755,11 +756,11 @@ const ThreatsView = () => {
               )}
 
               {/* Raw Event Data */}
-              <div className="bg-gray-700 p-5 rounded-xl">
+              <div className="bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700">
                 <h4 className="text-sm font-semibold text-gray-400 mb-3 flex items-center">
                   <FiInfo className="mr-2" /> Raw Event Data
                 </h4>
-                <pre className="text-sm overflow-x-auto max-h-96 bg-gray-800 p-4 rounded-lg">
+                <pre className="text-sm overflow-x-auto max-h-96 bg-gray-800/50 p-4 rounded-lg">
                   {JSON.stringify(eventDetails, null, 2)}
                 </pre>
               </div>
@@ -768,7 +769,7 @@ const ThreatsView = () => {
               <div className="mt-8 flex justify-end">
                 <button
                   onClick={closeEventDetails}
-                  className="px-5 py-2.5 bg-cyan-600 rounded-lg hover:bg-cyan-700 font-medium"
+                  className="px-5 py-2.5 bg-cyan-600 rounded-lg hover:bg-cyan-700 font-medium transition-colors"
                 >
                   Close Details
                 </button>
