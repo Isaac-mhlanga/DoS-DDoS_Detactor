@@ -14,15 +14,58 @@ import {
   FiX,
   FiBarChart,
   FiChevronsLeft,
-  FiChevronsRight
+  FiChevronsRight,
+  FiCheck,
+  FiXCircle,
 } from "react-icons/fi";
+
+// Delete Confirmation Modal Component
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, rule }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full">
+        <div className="flex items-center mb-4">
+          <FiAlertTriangle className="text-red-500 text-xl mr-3" />
+          <h3 className="text-lg font-semibold text-white">Confirm Deletion</h3>
+        </div>
+
+        <p className="text-gray-300 mb-4">
+          Are you sure you want to delete this firewall rule?
+        </p>
+
+        {rule && (
+          <div className="bg-gray-800/50 p-3 rounded-lg mb-4 border border-gray-700">
+            <p className="text-sm font-mono text-white truncate">{rule.rule}</p>
+          </div>
+        )}
+
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 flex items-center rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors text-white"
+          >
+            <FiX className="mr-2" /> Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(rule)}
+            className="px-4 py-2 flex items-center rounded-lg bg-red-700 hover:bg-red-600 transition-colors text-white"
+          >
+            <FiTrash2 className="mr-2" /> Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Enhanced StatusBadge component
 const StatusBadge = ({ isConnected }) => (
   <div
     className={`ml-4 flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-      isConnected 
-        ? "bg-green-900/30 text-green-400 border border-green-700/50" 
+      isConnected
+        ? "bg-green-900/30 text-green-400 border border-green-700/50"
         : "bg-red-900/30 text-red-400 border border-red-700/50"
     }`}
   >
@@ -63,11 +106,15 @@ const RuleTypeBadge = ({ type }) => {
   const typeColors = {
     inbound: "bg-blue-600/20 text-blue-300 border border-blue-500/30",
     outbound: "bg-purple-600/20 text-purple-300 border border-purple-500/30",
-    internal: "bg-cyan-600/20 text-cyan-300 border border-cyan-500/30"
+    internal: "bg-cyan-600/20 text-cyan-300 border border-cyan-500/30",
   };
-  
+
   return (
-    <span className={`px-2 py-1 rounded-full text-xs capitalize ${typeColors[type] || "bg-gray-600"}`}>
+    <span
+      className={`px-2 py-1 rounded-full text-xs capitalize ${
+        typeColors[type] || "bg-gray-600"
+      }`}
+    >
       {type}
     </span>
   );
@@ -80,26 +127,24 @@ const StatCard = ({ title, value, description, icon, isLoading }) => (
       {icon}
       {title}
     </h3>
-    <p className="text-3xl font-mono text-white">
-      {isLoading ? "..." : value}
-    </p>
+    <p className="text-3xl font-mono text-white">{isLoading ? "..." : value}</p>
     <p className="text-sm text-gray-400 mt-1">{description}</p>
   </div>
 );
 
 // Premium Pagination Component
-const PremiumPagination = ({ 
-  currentPage, 
-  totalPages, 
+const PremiumPagination = ({
+  currentPage,
+  totalPages,
   onPageChange,
   onPrev,
   onNext,
   onFirst,
-  onLast
+  onLast,
 }) => {
   const maxVisiblePages = 5; // Maximum pages to show in the pagination bar
   let startPage, endPage;
-  
+
   if (totalPages <= maxVisiblePages) {
     // Show all pages
     startPage = 1;
@@ -108,7 +153,7 @@ const PremiumPagination = ({
     // Calculate start and end pages
     const maxPagesBeforeCurrent = Math.floor(maxVisiblePages / 2);
     const maxPagesAfterCurrent = Math.ceil(maxVisiblePages / 2) - 1;
-    
+
     if (currentPage <= maxPagesBeforeCurrent) {
       // Near the start
       startPage = 1;
@@ -123,8 +168,11 @@ const PremiumPagination = ({
       endPage = currentPage + maxPagesAfterCurrent;
     }
   }
-  
-  const pages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+
+  const pages = Array.from(
+    { length: endPage - startPage + 1 },
+    (_, i) => startPage + i
+  );
 
   return (
     <div className="flex items-center justify-between w-full">
@@ -141,7 +189,7 @@ const PremiumPagination = ({
         >
           <FiChevronsLeft size={18} />
         </button>
-        
+
         <button
           onClick={onPrev}
           disabled={currentPage === 1}
@@ -155,9 +203,9 @@ const PremiumPagination = ({
           <FiChevronLeft size={18} />
         </button>
       </div>
-      
+
       <div className="flex items-center">
-        {pages.map(page => (
+        {pages.map((page) => (
           <button
             key={page}
             onClick={() => onPageChange(page)}
@@ -170,7 +218,7 @@ const PremiumPagination = ({
             {page}
           </button>
         ))}
-        
+
         {endPage < totalPages && (
           <>
             <span className="mx-1 text-gray-500">...</span>
@@ -187,7 +235,7 @@ const PremiumPagination = ({
           </>
         )}
       </div>
-      
+
       <div className="flex items-center space-x-1">
         <button
           onClick={onNext}
@@ -201,7 +249,7 @@ const PremiumPagination = ({
         >
           <FiChevronRight size={18} />
         </button>
-        
+
         <button
           onClick={onLast}
           disabled={currentPage === totalPages}
@@ -230,6 +278,7 @@ export default function FirewallView() {
   const [rulesPerPage] = useState(10); // Increased per page for better UX
   const [isConnected, setIsConnected] = useState(true);
   const [isAddingRule, setIsAddingRule] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, rule: null });
 
   // Fetch firewall rules from API
   const fetchFirewallRules = async () => {
@@ -303,6 +352,7 @@ export default function FirewallView() {
     if (!newRule.trim()) return;
 
     setIsAddingRule(true);
+    setError(null);
     try {
       // Parse rule components
       const portMatch = newRule.match(/(?:port|ports?)\s+(\d+)/i);
@@ -311,7 +361,8 @@ export default function FirewallView() {
       const actionMatch = newRule.match(/^(block|allow|drop|reject)/i);
 
       if (!portMatch) {
-        alert("Please specify a port (e.g. 'port 22')");
+        setError("Please specify a port (e.g. 'port 22')");
+        setIsAddingRule(false);
         return;
       }
 
@@ -374,19 +425,23 @@ export default function FirewallView() {
   };
 
   // Delete firewall rule
-  const deleteRule = async (id) => {
-    const ruleToDelete = firewallRules.find((rule) => rule.id === id);
-    if (!ruleToDelete) return;
+  const deleteRule = async (rule) => {
+    if (!rule) return;
 
     try {
       const res = await fetch(
-        `http://localhost:5050/firewall/rules/${ruleToDelete.chain}/${ruleToDelete.ruleNum}`,
+        `http://localhost:5050/firewall/rules/${rule.chain}/${rule.ruleNum}`,
         { method: "DELETE" }
       );
 
-      if (!res.ok) throw new Error("Delete failed");
-      fetchFirewallRules();
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Delete failed");
+      }
+
+      await fetchFirewallRules();
       setCurrentPage(1);
+      setDeleteModal({ isOpen: false, rule: null });
     } catch (err) {
       console.error("Delete failed", err);
       setError(`Failed to delete rule: ${err.message}`);
@@ -411,7 +466,8 @@ export default function FirewallView() {
 
   // Pagination controls
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
-  const nextPage = () => currentPage < totalPages && setCurrentPage(currentPage + 1);
+  const nextPage = () =>
+    currentPage < totalPages && setCurrentPage(currentPage + 1);
   const prevPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
   const firstPage = () => setCurrentPage(1);
   const lastPage = () => setCurrentPage(totalPages);
@@ -439,7 +495,7 @@ export default function FirewallView() {
 
         <button
           onClick={refreshRules}
-          className="flex items-center px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors border border-gray-700"
+          className="flex items-center px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors border border-gray-700 text-white"
           disabled={isRefreshing}
         >
           <FiRefreshCw
@@ -454,7 +510,7 @@ export default function FirewallView() {
         <div className="mb-6 p-4 bg-red-900/40 text-red-200 rounded-lg flex items-center border border-red-700/50">
           <FiAlertTriangle className="mr-3 flex-shrink-0 text-xl" />
           <span>{error}</span>
-          <button 
+          <button
             className="ml-auto text-gray-400 hover:text-gray-200"
             onClick={() => setError(null)}
           >
@@ -487,8 +543,8 @@ export default function FirewallView() {
                 disabled={!isConnected || isAddingRule}
                 className={`px-6 py-3 rounded-lg transition-all flex items-center justify-center ${
                   isConnected && !isAddingRule
-                    ? "bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600"
-                    : "bg-gray-800 cursor-not-allowed"
+                    ? "bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white"
+                    : "bg-gray-800 cursor-not-allowed text-gray-400"
                 }`}
               >
                 {isAddingRule ? (
@@ -496,17 +552,22 @@ export default function FirewallView() {
                     <FiRefreshCw className="animate-spin mr-2" /> Adding...
                   </>
                 ) : (
-                  "Add Rule"
+                  <>
+                    <FiPlus className="mr-2" /> Add Rule
+                  </>
                 )}
               </button>
             </div>
 
             <div className="text-sm text-gray-400 space-y-1">
-             
               <p className="mt-2 text-gray-300">Examples:</p>
               <div className="bg-gray-800/50 p-3 rounded-lg mt-2 border border-gray-700">
-                <p className="text-xs font-mono text-cyan-300 mb-1">• "Block traffic from 192.168.1.0/24 to any port 22"</p>
-                <p className="text-xs font-mono text-cyan-300">• "Allow traffic from 10.0.0.5 to 192.168.1.10 port 80"</p>
+                <p className="text-xs font-mono text-cyan-300 mb-1">
+                  • "Block traffic from 192.168.1.0/24 to any port 22"
+                </p>
+                <p className="text-xs font-mono text-cyan-300">
+                  • "Allow traffic from 10.0.0.5 to 192.168.1.10 port 80"
+                </p>
               </div>
             </div>
           </div>
@@ -528,11 +589,11 @@ export default function FirewallView() {
                       : "text-gray-400 hover:text-gray-300"
                   }`}
                 >
-                  {tab}
+                  {tab === "all" ? "All Rules" : tab}
                 </button>
               ))}
             </div>
-            
+
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-800/30">
@@ -541,8 +602,12 @@ export default function FirewallView() {
                       Rule Definition
                     </th>
                     <th className="px-5 py-4 text-left text-gray-400">Type</th>
-                    <th className="px-5 py-4 text-left text-gray-400">Severity</th>
-                    <th className="px-5 py-4 text-left text-gray-400">Actions</th>
+                    <th className="px-5 py-4 text-left text-gray-400">
+                      Severity
+                    </th>
+                    <th className="px-5 py-4 text-left text-gray-400">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -552,7 +617,9 @@ export default function FirewallView() {
                         key={rule.id}
                         className="border-t border-gray-700 hover:bg-gray-800/20 transition-colors"
                       >
-                        <td className="px-5 py-4 text-white font-mono text-sm">{rule.rule}</td>
+                        <td className="px-5 py-4 text-white font-mono text-sm">
+                          {rule.rule}
+                        </td>
                         <td className="px-5 py-4">
                           <RuleTypeBadge type={rule.type} />
                         </td>
@@ -561,8 +628,10 @@ export default function FirewallView() {
                         </td>
                         <td className="px-5 py-4">
                           <button
-                            onClick={() => deleteRule(rule.id)}
-                            className="px-3 py-1.5 text-sm flex items-center bg-red-700/30 hover:bg-red-700/40 rounded-lg transition-colors border border-red-600/30"
+                            onClick={() =>
+                              setDeleteModal({ isOpen: true, rule })
+                            }
+                            className="px-3 py-1.5 text-sm flex items-center bg-red-700/30 hover:bg-red-700/40 rounded-lg transition-colors border border-red-600/30 text-red-200"
                           >
                             <FiTrash2 className="mr-1" /> Delete
                           </button>
@@ -571,7 +640,10 @@ export default function FirewallView() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" className="text-center py-8 text-gray-400">
+                      <td
+                        colSpan="4"
+                        className="text-center py-8 text-gray-400"
+                      >
                         {isConnected
                           ? "No firewall rules found"
                           : "Server disconnected - rules unavailable"}
@@ -606,13 +678,14 @@ export default function FirewallView() {
             )}
           </div>
         </div>
-        
+
         {/* Right Column */}
         <div>
           {/* Statistics Section */}
           <div className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 p-6 mb-6">
             <h2 className="text-xl font-semibold mb-5 text-gray-300 flex items-center">
-              <FiBarChart className="mr-2 text-purple-400" /> Firewall Statistics
+              <FiBarChart className="mr-2 text-purple-400" /> Firewall
+              Statistics
             </h2>
             <div className="grid grid-cols-1 gap-5">
               <StatCard
@@ -627,8 +700,11 @@ export default function FirewallView() {
                 title="Total Rules"
                 value={isConnected ? firewallRules.length : "N/A"}
                 description={
-                  isConnected ? "Firewall rules configured" : "Server disconnected"
+                  isConnected
+                    ? "Firewall rules configured"
+                    : "Server disconnected"
                 }
+                icon={<FiShield className="mr-2 text-cyan-400" />}
                 isLoading={isRefreshing}
               />
 
@@ -636,13 +712,21 @@ export default function FirewallView() {
                 title="High Severity Rules"
                 value={isConnected ? highSeverityRules : "N/A"}
                 description="Critical protections"
+                icon={<FiAlertTriangle className="mr-2 text-red-400" />}
                 isLoading={isRefreshing}
               />
             </div>
           </div>
-          
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, rule: null })}
+        onConfirm={deleteRule}
+        rule={deleteModal.rule}
+      />
     </div>
   );
 }

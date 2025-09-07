@@ -5,13 +5,11 @@ import {
   FiBarChart2,
   FiClock,
   FiRefreshCw,
-  FiSearch,
   FiChevronLeft,
   FiChevronRight,
   FiChevronsLeft,
   FiChevronsRight,
   FiLoader,
-  FiWifi,
   FiFilter,
   FiInfo,
   FiX,
@@ -20,13 +18,13 @@ import {
 
 // Reusable components
 const StatCard = ({ title, value, description, icon, color }) => (
-  <div className={`bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700 shadow-lg ${color}`}>
+  <div
+    className={`bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700 shadow-lg ${color}`}
+  >
     <div className="flex items-center justify-between">
       <div>
         <div className="flex items-center mb-2">
-          <div className="p-2 rounded-lg bg-opacity-10 mr-3">
-            {icon}
-          </div>
+          <div className="p-2 rounded-lg bg-opacity-10 mr-3">{icon}</div>
           <h3 className="text-lg font-semibold text-gray-300">{title}</h3>
         </div>
         <p className="text-sm text-gray-400">{description}</p>
@@ -52,11 +50,13 @@ const SeverityBadge = ({ severity }) => {
     critical: "bg-red-500/20 text-red-400 border-red-500/50",
     high: "bg-orange-500/20 text-orange-400 border-orange-500/50",
     medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
-    low: "bg-gray-700/50 text-gray-300 border-gray-600"
+    low: "bg-gray-700/50 text-gray-300 border-gray-600",
   };
 
   return (
-    <span className={`px-3 py-1 text-xs rounded-full border ${colors[severityText]}`}>
+    <span
+      className={`px-3 py-1 text-xs rounded-full border ${colors[severityText]}`}
+    >
       {severityText}
     </span>
   );
@@ -66,11 +66,17 @@ const ActionBadge = ({ action }) => {
   const colors = {
     blocked: "bg-green-500/20 text-green-400 border-green-500/50",
     allowed: "bg-blue-500/20 text-blue-400 border-blue-500/50",
-    detected: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50"
+    detected: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
+    dropped: "bg-red-500/20 text-red-400 border-red-500/50",
+    rejected: "bg-purple-500/20 text-purple-400 border-purple-500/50",
   };
-  
+
   return (
-    <span className={`px-3 py-1 text-xs rounded-full border ${colors[action] || colors.detected}`}>
+    <span
+      className={`px-3 py-1 text-xs rounded-full border ${
+        colors[action] || colors.detected
+      }`}
+    >
       {action || "detected"}
     </span>
   );
@@ -91,10 +97,9 @@ const PaginationButton = ({ onClick, disabled, children }) => (
 );
 
 const ThreatsView = () => {
-  // State management (same as before)
+  // State management
   const [events, setEvents] = useState([]);
   const [timeRange, setTimeRange] = useState("24h");
-  const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -112,12 +117,11 @@ const ThreatsView = () => {
   ]);
   const [error, setError] = useState(null);
   const [isBlocking, setIsBlocking] = useState(false);
-  const [threatLog, setThreatLog] = useState("");
 
   // Track if component is mounted
   const isMounted = useRef(true);
 
-  // Fetch events from server (same as before)
+  // Fetch events from server
   const fetchEvents = async (isAutoRefresh = false) => {
     if (isAutoRefresh) {
       setIsAutoRefreshing(true);
@@ -130,7 +134,6 @@ const ThreatsView = () => {
       const params = new URLSearchParams({
         event_type: eventType,
         time_range: timeRange,
-        search: searchQuery,
       });
 
       const res = await fetch(
@@ -162,22 +165,7 @@ const ThreatsView = () => {
     }
   };
 
-  // Fetch threat log (same as before)
-  const fetchThreatLog = async () => {
-    try {
-      const res = await fetch("http://localhost:5050/suricata/threat-log");
-      if (!res.ok) throw new Error("Failed to fetch threat log");
-
-      const data = await res.json();
-      if (isMounted.current) {
-        setThreatLog(data.log || "No threats logged yet");
-      }
-    } catch (error) {
-      console.error("Error fetching threat log:", error);
-    }
-  };
-
-  // Block an IP address (same as before)
+  // Block an IP address
   const blockIp = async (ip) => {
     if (!ip || ip === "N/A") return;
 
@@ -197,8 +185,8 @@ const ThreatsView = () => {
       const data = await res.json();
       alert(data.message);
 
-      // Refresh threat log to show new blocked IP
-      fetchThreatLog();
+      // Refresh events to update status
+      fetchEvents();
     } catch (error) {
       alert(`Error blocking IP: ${error.message}`);
     } finally {
@@ -209,23 +197,21 @@ const ThreatsView = () => {
   useEffect(() => {
     isMounted.current = true;
     fetchEvents();
-    fetchThreatLog();
 
-    // Auto-refresh every 30 seconds (silent)
+    // Auto-refresh every 10 seconds
     const interval = setInterval(() => {
       if (isMounted.current) {
         fetchEvents(true);
-        fetchThreatLog();
       }
-    }, 30000);
+    }, 10000);
 
     return () => {
       isMounted.current = false;
       clearInterval(interval);
     };
-  }, [eventType, timeRange, searchQuery]);
+  }, [eventType, timeRange]);
 
-  // Pagination logic (same as before)
+  // Pagination logic
   const totalPages = Math.ceil(events.length / itemsPerPage);
   const startIdx = (currentPage - 1) * itemsPerPage;
   const currentItems = events.slice(startIdx, startIdx + itemsPerPage);
@@ -236,26 +222,14 @@ const ThreatsView = () => {
     setCurrentPage(page);
   };
 
-  // Helpers (same as before)
-  const getSeverityText = (sev) => {
-    switch (sev) {
-      case 4:
-        return "critical";
-      case 3:
-        return "high";
-      case 2:
-        return "medium";
-      case 1:
-      default:
-        return "low";
-    }
-  };
-
+  // Helpers
   const severityCounts = {
     critical: events.filter((e) => e.severity === 4).length,
     high: events.filter((e) => e.severity === 3).length,
     medium: events.filter((e) => e.severity === 2).length,
-    blocked: events.filter((e) => e.action === "blocked").length,
+    blocked: events.filter(
+      (e) => e.action === "blocked" || e.action === "dropped"
+    ).length,
   };
 
   const formatTimeRange = () => {
@@ -293,9 +267,6 @@ const ThreatsView = () => {
     setEventDetails(null);
   };
 
-  // Calculate statistics (same as before)
-  const activeBlocks = threatLog.split("BLOCKED").length - 1;
-
   return (
     <div className="p-6 bg-gradient-to-br from-gray-900 to-gray-850 rounded-xl shadow-lg">
       {/* Header */}
@@ -320,10 +291,7 @@ const ThreatsView = () => {
 
         <div className="flex flex-wrap gap-3">
           <button
-            onClick={() => {
-              fetchEvents();
-              fetchThreatLog();
-            }}
+            onClick={fetchEvents}
             disabled={isRefreshing}
             className="flex items-center px-4 py-2.5 bg-gray-800 rounded-lg hover:bg-gray-700/60 disabled:opacity-50 transition-colors border border-gray-700"
             aria-label="Refresh events"
@@ -337,7 +305,7 @@ const ThreatsView = () => {
       </header>
 
       {/* Filters Section */}
-      <section className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <section className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="relative">
           <FiFilter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <select
@@ -352,18 +320,6 @@ const ThreatsView = () => {
               </option>
             ))}
           </select>
-        </div>
-
-        <div className="relative">
-          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search events..."
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-colors"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            disabled={isRefreshing}
-          />
         </div>
 
         <select
@@ -407,7 +363,9 @@ const ThreatsView = () => {
 
       {/* Stats Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-300 mb-4">Threat Overview</h2>
+        <h2 className="text-xl font-semibold text-gray-300 mb-4">
+          Threat Overview
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {isRefreshing ? (
             Array(4)
@@ -447,32 +405,22 @@ const ThreatsView = () => {
               />
 
               <StatCard
-                title="Active Blocks"
-                value={activeBlocks}
-                description="Malicious IPs blocked"
-                icon={<FiShieldOff className="text-cyan-400" />}
-                color="border-l-cyan-500"
+                title="High Severity"
+                value={severityCounts.high}
+                description="Requires attention"
+                icon={<FiShieldOff className="text-orange-400" />}
+                color="border-l-orange-500"
               />
             </>
           )}
         </div>
       </section>
 
-      {/* Threat Log Section */}
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-300 mb-4 flex items-center">
-          <FiAlertTriangle className="mr-2 text-cyan-400" /> Threat Block Log
-        </h2>
-        <div className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 p-5">
-          <div className="bg-gray-800/50 p-4 rounded-lg max-h-40 overflow-y-auto font-mono text-sm whitespace-pre-wrap">
-            {threatLog || "No threats blocked yet"}
-          </div>
-        </div>
-      </section>
-
       {/* Events Table Section */}
       <section className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-300 mb-4">Security Events</h2>
+        <h2 className="text-xl font-semibold text-gray-300 mb-4">
+          Security Events
+        </h2>
         <div className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -481,10 +429,16 @@ const ThreatsView = () => {
                   <th className="px-5 py-4 text-left text-gray-300 min-w-[300px]">
                     Signature
                   </th>
-                  <th className="px-5 py-4 text-left text-gray-300">Source IP</th>
-                  <th className="px-5 py-4 text-left text-gray-300">Destination IP</th>
+                  <th className="px-5 py-4 text-left text-gray-300">
+                    Source IP
+                  </th>
+                  <th className="px-5 py-4 text-left text-gray-300">
+                    Destination IP
+                  </th>
                   <th className="px-5 py-4 text-left text-gray-300">Type</th>
-                  <th className="px-5 py-4 text-left text-gray-300">Severity</th>
+                  <th className="px-5 py-4 text-left text-gray-300">
+                    Severity
+                  </th>
                   <th className="px-5 py-4 text-left text-gray-300">Action</th>
                   <th className="px-5 py-4 text-left text-gray-300 flex items-center">
                     <FiClock className="mr-2" /> Timestamp

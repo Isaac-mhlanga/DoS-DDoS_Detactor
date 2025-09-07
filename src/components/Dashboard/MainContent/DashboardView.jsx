@@ -1,9 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
-  FiActivity, FiServer, FiCpu, FiHardDrive, FiShield, FiBarChart2, 
-  FiRefreshCw, FiClock, FiAlertCircle, FiTrendingUp, FiZap, 
-  FiShieldOff, FiDatabase, FiGlobe, FiPieChart
-} from 'react-icons/fi';
+  FiActivity,
+  FiServer,
+  FiCpu,
+  FiHardDrive,
+  FiShield,
+  FiBarChart2,
+  FiRefreshCw,
+  FiClock,
+  FiAlertCircle,
+  FiTrendingUp,
+  FiZap,
+  FiShieldOff,
+  FiDatabase,
+  FiGlobe,
+  FiPieChart,
+} from "react-icons/fi";
 
 const DashboardView = () => {
   // State management
@@ -18,11 +30,12 @@ const DashboardView = () => {
     network_out: 0,
     processes: 0,
   });
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [suricataStatus, setSuricataStatus] = useState(null);
   const [firewallStats, setFirewallStats] = useState(null);
-  const [mlStatus, setMlStatus] = useState(null);
+  const [trafficStats, setTrafficStats] = useState(null);
+  const [threatLog, setThreatLog] = useState("");
   const [isSecurityLoading, setIsSecurityLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
@@ -50,15 +63,18 @@ const DashboardView = () => {
   useEffect(() => {
     const fetchSecurityStatus = async () => {
       try {
-        const [suricataRes, firewallRes, mlRes] = await Promise.all([
-          fetch("http://localhost:5050/suricata/status"),
-          fetch("http://localhost:5050/firewall/stats"),
-          fetch("http://localhost:5050/ml/status"),
-        ]);
+        const [suricataRes, firewallRes, trafficRes, threatLogRes] =
+          await Promise.all([
+            fetch("http://localhost:5050/suricata/status"),
+            fetch("http://localhost:5050/firewall/stats"),
+            fetch("http://localhost:5050/network/traffic"),
+            fetch("http://localhost:5050/suricata/threat-log"),
+          ]);
 
         setSuricataStatus(await suricataRes.json());
         setFirewallStats(await firewallRes.json());
-        setMlStatus(await mlRes.json());
+        setTrafficStats(await trafficRes.json());
+        setThreatLog((await threatLogRes.json()).log);
         setIsSecurityLoading(false);
         setLastUpdated(new Date());
       } catch (error) {
@@ -68,7 +84,7 @@ const DashboardView = () => {
     };
 
     fetchSecurityStatus();
-    const interval = setInterval(fetchSecurityStatus, 30000);
+    const interval = setInterval(fetchSecurityStatus, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -80,7 +96,7 @@ const DashboardView = () => {
     memory_total_mb: totalMem = 0,
     uptime = 0,
     platform = "Unknown",
-    processes = 0
+    processes = 0,
   } = systemStats;
 
   // Calculate system health status
@@ -100,21 +116,21 @@ const DashboardView = () => {
   };
 
   const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i]);
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1) + " " + sizes[i]);
   };
 
   // Parse Suricata status
   const parseSuricataStatus = (status) => {
     if (!status || !status.status) return {};
-    
+
     const statusText = status.status;
-    const activeMatch = statusText.match(/Active: (.+?) since/);
+    const activeMatch = statusText.match(/Active: (.+?) \(/);
     const uptimeMatch = statusText.match(/since (.+?)\n/);
-    const memoryMatch = statusText.match(/Memory: (.+?) \(peak/);
+    const memoryMatch = statusText.match(/Memory: (.+?)\n/);
     const cpuMatch = statusText.match(/CPU: (.+?)\n/);
     const versionMatch = statusText.match(/Version: (.+?)\n/);
     const threadsMatch = statusText.match(/Threads: (.+?)\n/);
@@ -152,13 +168,13 @@ const DashboardView = () => {
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
     const dash = (value * circumference) / 100;
-    
+
     const getColor = (val) => {
       if (val > 85) return "#EF4444";
       if (val > 70) return "#F59E0B";
       return "#10B981";
     };
-    
+
     return (
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
@@ -190,73 +206,25 @@ const DashboardView = () => {
     );
   };
 
-  // Mini sparkline component
-  const Sparkline = ({ data, color }) => {
-    if (!data || data.length === 0) return null;
-    
-    const max = Math.max(...data, 100);
-    const min = 0;
-    const range = max - min;
-    const width = 100;
-    const height = 30;
-    const points = data.map((value, i) => {
-      const x = (i / (data.length - 1)) * width;
-      const y = height - ((value - min) / range) * height;
-      return `${x},${y}`;
-    }).join(' ');
-    
-    return (
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-        <polyline
-          fill="none"
-          stroke={color}
-          strokeWidth="2"
-          points={points}
-        />
-        {data.length > 0 && (
-          <circle
-            cx={width}
-            cy={height - ((data[data.length - 1] - min) / range) * height}
-            r="2.5"
-            fill={color}
-          />
-        )}
-      </svg>
-    );
-  };
-
-  // Threat severity badge
-  const ThreatSeverityBadge = ({ severity }) => {
-    const colors = {
-      critical: "bg-red-500/20 text-red-400 border-red-500/50",
-      high: "bg-orange-500/20 text-orange-400 border-orange-500/50",
-      medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
-      low: "bg-blue-500/20 text-blue-400 border-blue-500/50"
-    };
-    
-    return (
-      <span className={`px-2 py-0.5 rounded-full text-xs border ${colors[severity]}`}>
-        {severity.charAt(0).toUpperCase() + severity.slice(1)}
-      </span>
-    );
-  };
-
   // Refresh all data
   const refreshAllData = async () => {
     setIsLoading(true);
     setIsSecurityLoading(true);
     try {
-      const [systemRes, suricataRes, firewallRes, mlRes] = await Promise.all([
-        fetch("http://localhost:5050/api/system/stats"),
-        fetch("http://localhost:5050/suricata/status"),
-        fetch("http://localhost:5050/firewall/stats"),
-        fetch("http://localhost:5050/ml/status")
-      ]);
-      
+      const [systemRes, suricataRes, firewallRes, trafficRes, threatLogRes] =
+        await Promise.all([
+          fetch("http://localhost:5050/api/system/stats"),
+          fetch("http://localhost:5050/suricata/status"),
+          fetch("http://localhost:5050/firewall/stats"),
+          fetch("http://localhost:5050/network/traffic"),
+          fetch("http://localhost:5050/suricata/threat-log"),
+        ]);
+
       setSystemStats(await systemRes.json());
       setSuricataStatus(await suricataRes.json());
       setFirewallStats(await firewallRes.json());
-      setMlStatus(await mlRes.json());
+      setTrafficStats(await trafficRes.json());
+      setThreatLog((await threatLogRes.json()).log);
       setLastUpdated(new Date());
     } catch (error) {
       console.error("Failed to refresh data:", error);
@@ -272,19 +240,24 @@ const DashboardView = () => {
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center">
             <FiShield className="mr-3 text-blue-400" />
-            Security Dashboard
+            Network Security Dashboard
           </h1>
-          <p className="text-gray-400 mt-2">Real-time monitoring of system resources and security services</p>
+          <p className="text-gray-400 mt-2">
+            Real-time monitoring of system resources and security services
+          </p>
         </div>
-        
+
         <div className="flex items-center space-x-4 mt-4 md:mt-0">
           <div className="flex items-center bg-gray-800 px-4 py-2 rounded-lg">
             <FiClock className="text-gray-400 mr-2" />
             <span className="text-gray-300">
-              {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {lastUpdated.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </span>
           </div>
-          <button 
+          <button
             className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center transition-colors"
             onClick={refreshAllData}
           >
@@ -293,7 +266,7 @@ const DashboardView = () => {
           </button>
         </div>
       </header>
-      
+
       {/* Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700">
@@ -304,30 +277,37 @@ const DashboardView = () => {
             <div>
               <h3 className="text-gray-400 text-sm">System Health</h3>
               <div className="flex items-center mt-1">
-                <div className={`w-2 h-2 rounded-full mr-2 ${
-                  systemStatus === "Stressed" ? "bg-red-500 animate-pulse" : 
-                  systemStatus === "Moderate" ? "bg-yellow-500" : "bg-green-500"
-                }`} />
-                <span className="text-white text-lg font-medium">{systemStatus}</span>
+                <div
+                  className={`w-2 h-2 rounded-full mr-2 ${
+                    systemStatus === "Stressed"
+                      ? "bg-red-500 animate-pulse"
+                      : systemStatus === "Moderate"
+                      ? "bg-yellow-500"
+                      : "bg-green-500"
+                  }`}
+                />
+                <span className="text-white text-lg font-medium">
+                  {systemStatus}
+                </span>
               </div>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700">
           <div className="flex items-center">
             <div className="p-3 bg-purple-500/10 rounded-lg mr-4">
               <FiShield className="text-purple-400 text-xl" />
             </div>
             <div>
-              <h3 className="text-gray-400 text-sm">Threats Blocked</h3>
+              <h3 className="text-gray-400 text-sm">Threats Detected</h3>
               <div className="text-white text-lg font-medium mt-1">
-                {firewallStats?.blockedIPs || '0'}
+                {suricata?.alerts || "0"}
               </div>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700">
           <div className="flex items-center">
             <div className="p-3 bg-green-500/10 rounded-lg mr-4">
@@ -341,22 +321,22 @@ const DashboardView = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-gradient-to-br from-gray-800 to-gray-850 p-5 rounded-xl border border-gray-700">
           <div className="flex items-center">
             <div className="p-3 bg-red-500/10 rounded-lg mr-4">
               <FiAlertCircle className="text-red-400 text-xl" />
             </div>
             <div>
-              <h3 className="text-gray-400 text-sm">Active Alerts</h3>
+              <h3 className="text-gray-400 text-sm">Blocked IPs</h3>
               <div className="text-white text-lg font-medium mt-1">
-                {suricata?.alerts || '0'} detected
+                {firewallStats?.blockedIPs || "0"}
               </div>
             </div>
           </div>
         </div>
       </div>
-      
+
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column */}
@@ -372,7 +352,7 @@ const DashboardView = () => {
                 Updated every 5 seconds
               </div>
             </div>
-            
+
             {isLoading ? (
               <div className="flex justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -388,11 +368,13 @@ const DashboardView = () => {
                     <RadialProgress value={cpu} />
                   </div>
                 </div>
-                
+
                 <div>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-gray-400">Memory Usage</h3>
-                    <span className="text-white font-medium">{memory_percent}%</span>
+                    <span className="text-white font-medium">
+                      {memory_percent}%
+                    </span>
                   </div>
                   <div className="flex items-center justify-center">
                     <RadialProgress value={memory_percent} />
@@ -401,7 +383,7 @@ const DashboardView = () => {
               </div>
             )}
           </div>
-          
+
           {/* Security Services Status */}
           <div className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 p-6">
             <div className="flex justify-between items-center mb-6">
@@ -410,16 +392,16 @@ const DashboardView = () => {
                 Security Services Status
               </h2>
               <div className="text-sm text-gray-400">
-                Updated every 30 seconds
+                Updated every 10 seconds
               </div>
             </div>
-            
+
             {isSecurityLoading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-green-500"></div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Suricata Card */}
                 <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
                   <div className="flex items-center mb-3">
@@ -428,7 +410,9 @@ const DashboardView = () => {
                     </div>
                     <h3 className="text-white font-medium">Suricata IDS</h3>
                     <span className="ml-auto text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded">
-                      {suricata.active.includes("active") ? "Active" : "Inactive"}
+                      {suricata.active && suricata.active.includes("active")
+                        ? "Active"
+                        : "Inactive"}
                     </span>
                   </div>
                   <div className="text-xs text-gray-400">
@@ -446,7 +430,7 @@ const DashboardView = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Firewall Card */}
                 <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
                   <div className="flex items-center mb-3">
@@ -461,7 +445,9 @@ const DashboardView = () => {
                   <div className="text-xs text-gray-400">
                     <div className="flex justify-between py-1">
                       <span>Blocked IPs:</span>
-                      <span className="text-white">{firewallStats?.blockedIPs || 0}</span>
+                      <span className="text-white">
+                        {firewallStats?.blockedIPs || 0}
+                      </span>
                     </div>
                     <div className="flex justify-between py-1">
                       <span>INPUT Policy:</span>
@@ -472,40 +458,8 @@ const DashboardView = () => {
                     <div className="flex justify-between py-1">
                       <span>Rules:</span>
                       <span className="text-white">
-                        {firewallStats?.chains?.INPUT?.rules?.length || 0} active
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* ML Card */}
-                <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
-                  <div className="flex items-center mb-3">
-                    <div className="p-2 bg-purple-500/10 rounded-lg mr-3">
-                      <FiBarChart2 className="text-purple-400" />
-                    </div>
-                    <h3 className="text-white font-medium">DDoS Detection</h3>
-                    <span className="ml-auto text-xs px-2 py-1 bg-green-500/20 text-green-400 rounded">
-                      {mlStatus?.status === "active" ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    <div className="flex justify-between py-1">
-                      <span>Accuracy:</span>
-                      <span className="text-white">
-                        {mlStatus?.accuracy ? `${mlStatus.accuracy}%` : 'N/A'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span>Types Detected:</span>
-                      <span className="text-white">
-                        {mlStatus?.dosTypesDetected || 0} of 12
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span>Training Data:</span>
-                      <span className="text-white">
-                        {mlStatus?.trainingData || 'N/A'}
+                        {firewallStats?.chains?.INPUT?.rules?.length || 0}{" "}
+                        active
                       </span>
                     </div>
                   </div>
@@ -514,8 +468,7 @@ const DashboardView = () => {
             )}
           </div>
         </div>
-        
-      
+
         <div>
           {/* System Info */}
           <div className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 p-6 mb-8">
@@ -523,7 +476,7 @@ const DashboardView = () => {
               <FiServer className="mr-2 text-cyan-400" />
               System Information
             </h2>
-            
+
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyan-500"></div>
@@ -534,30 +487,29 @@ const DashboardView = () => {
                   <span className="text-gray-400">Platform</span>
                   <span className="text-white font-medium">{platform}</span>
                 </div>
-                
+
                 <div className="flex justify-between py-2 border-b border-gray-700">
                   <span className="text-gray-400">Uptime</span>
-                  <span className="text-white font-medium">{formatUptime(uptime)}</span>
-                </div>
-                
-                
-                <div className="flex justify-between py-2 border-gray-700">
-                  <span className="text-gray-400">Memory</span>
                   <span className="text-white font-medium">
-                    {Math.round(usedMem/1024)} GB / {Math.round(totalMem/1024)} GB
+                    {formatUptime(uptime)}
                   </span>
+                </div>
+
+                <div className="flex justify-between py-2 border-gray-700">
+                  <span className="text-gray-400">Processes</span>
+                  <span className="text-white font-medium">{processes}</span>
                 </div>
               </div>
             )}
           </div>
-          
+
           {/* Performance Metrics */}
           <div className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 p-6">
             <h2 className="text-xl font-bold text-white flex items-center mb-6">
               <FiTrendingUp className="mr-2 text-green-400" />
               Performance Metrics
             </h2>
-            
+
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-sm text-gray-400 mb-2">
@@ -565,42 +517,60 @@ const DashboardView = () => {
                   <span>{cpu}%</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2.5">
-                  <div 
+                  <div
                     className={`h-full rounded-full ${
-                      cpu > 85 ? "bg-red-500" : cpu > 70 ? "bg-yellow-500" : "bg-green-500"
+                      cpu > 85
+                        ? "bg-red-500"
+                        : cpu > 70
+                        ? "bg-yellow-500"
+                        : "bg-green-500"
                     }`}
                     style={{ width: `${cpu}%` }}
                   ></div>
                 </div>
               </div>
-              
+
               <div>
                 <div className="flex justify-between text-sm text-gray-400 mb-2">
                   <span>Memory Usage</span>
                   <span>{memory_percent}%</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2.5">
-                  <div 
+                  <div
                     className={`h-full rounded-full ${
-                      memory_percent > 85 ? "bg-red-500" : memory_percent > 70 ? "bg-yellow-500" : "bg-green-500"
+                      memory_percent > 85
+                        ? "bg-red-500"
+                        : memory_percent > 70
+                        ? "bg-yellow-500"
+                        : "bg-green-500"
                     }`}
                     style={{ width: `${memory_percent}%` }}
                   ></div>
                 </div>
               </div>
-              
+
               <div>
                 <div className="flex justify-between text-sm text-gray-400 mb-2">
                   <span>System Health</span>
                   <span>{systemStatus}</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2.5">
-                  <div 
+                  <div
                     className={`h-full rounded-full ${
-                      systemStatus === "Stressed" ? "bg-red-500" : 
-                      systemStatus === "Moderate" ? "bg-yellow-500" : "bg-green-500"
+                      systemStatus === "Stressed"
+                        ? "bg-red-500"
+                        : systemStatus === "Moderate"
+                        ? "bg-yellow-500"
+                        : "bg-green-500"
                     }`}
-                    style={{ width: systemStatus === "Stressed" ? "100%" : systemStatus === "Moderate" ? "70%" : "40%" }}
+                    style={{
+                      width:
+                        systemStatus === "Stressed"
+                          ? "100%"
+                          : systemStatus === "Moderate"
+                          ? "70%"
+                          : "40%",
+                    }}
                   ></div>
                 </div>
               </div>
@@ -608,10 +578,25 @@ const DashboardView = () => {
           </div>
         </div>
       </div>
-      
+
+      {/* Threat Log Section */}
+      <div className="bg-gradient-to-br from-gray-800 to-gray-850 rounded-xl border border-gray-700 p-6 mt-6">
+        <h2 className="text-xl font-bold text-white flex items-center mb-6">
+          <FiAlertCircle className="mr-2 text-red-400" />
+          Threat Log
+        </h2>
+
+        <div className="bg-gray-900 rounded-lg p-4 h-64 overflow-y-auto">
+          <pre className="text-sm text-gray-300 whitespace-pre-wrap">
+            {threatLog || "No threats logged yet..."}
+          </pre>
+        </div>
+      </div>
+
       {/* Footer */}
       <div className="mt-8 text-center text-gray-500 text-sm">
-        Security Dashboard v2.4.1 • Last updated: {lastUpdated.toLocaleString()} • All systems operational
+        Network Security Dashboard • Last updated:{" "}
+        {lastUpdated.toLocaleString()}
       </div>
     </div>
   );
